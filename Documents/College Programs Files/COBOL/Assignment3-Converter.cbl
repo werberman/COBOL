@@ -20,6 +20,7 @@
            SELECT CONVERTED
            ASSIGN TO "C:\SJunk\CONVERTED-STUFILE3.TXT"
                ORGANIZATION IS INDEXED
+               ACCESS IS SEQUENTIAL
                RECORD KEY IS RECORD-FD-KEY.
       *-----------------------
        DATA DIVISION.
@@ -45,8 +46,8 @@
        FD  CONVERTED.
            *> RECORD IS VARYING IN SIZE
            *> FROM 15 TO 110.
-           01 STUDENT-RECORD.
-               05 RECORD-FD-KEY PIC X(5).
+           01 INDX-STUDENT-RECORD.
+               05 RECORD-FD-KEY PIC 9(5).
                05 STUDENT-NUMBER PIC 9(6).
                05 TUITION-OWED PIC 9(4)V99.
                05 STUDENT-NAME PIC X(40).
@@ -65,8 +66,10 @@
        WORKING-STORAGE SECTION.
        01 WS-CONTROL-FIELDS.
            05 EOF-FLAG PIC X(1).
+           05 IX-CNTR PIC 9(5).
 
        01 WS-STUDENT-RECORD.
+           05 RECORD-WS-KEY PIC 9(5).
            05 WS-STUDENT-NUMBER PIC 9(6).
            05 WS-TUITION-OWED PIC 9(4)V99.
            05 WS-STUDENT-NAME PIC X(40).
@@ -88,13 +91,22 @@
       **
       * The main procedure of the program
       **
-            OPEN INPUT STUFILE.
+           OPEN INPUT STUFILE.
+           OPEN OUTPUT CONVERTED.
            PERFORM UNTIL EOF-FLAG = 'Y'
                READ STUFILE INTO WS-STUDENT-RECORD
                    AT END MOVE 'Y' TO EOF-FLAG
-                   NOT AT END DISPLAY WS-STUDENT-RECORD
+                   NOT AT END
+                       MOVE IX-CNTR TO RECORD-WS-KEY
+      *> Add 1 to the index value so the key is unique
+                       ADD 1 TO IX-CNTR
+                       DISPLAY WS-STUDENT-RECORD
+                       WRITE INDX-STUDENT-RECORD FROM WS-STUDENT-RECORD
+                       INVALID KEY
+                           DISPLAY "INVALID KEY"
                END-READ
            END-PERFORM.
            CLOSE STUFILE.
+           CLOSE CONVERTED.
       ** add other procedures here
        END PROGRAM YOUR-PROGRAM-NAME.
